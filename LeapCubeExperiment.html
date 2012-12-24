@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Leap</title>
+<style>canvas { width: 50%; height: 100% }</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script>
+var ws;
+
+// Support both the WebSocket and MozWebSocket objects
+if ((typeof(WebSocket) == 'undefined') &&
+    (typeof(MozWebSocket) != 'undefined')) {
+  WebSocket = MozWebSocket;
+}
+
+// Create the socket with event handlers
+function initLeapMotion() {
+  //Create and open the socket
+  ws = new WebSocket("ws://localhost:6437/");
+  
+  var doc = document;
+  
+  // On successful connection
+  ws.onopen = function(event) {
+    doc.getElementById("main").style.visibility = "visible";
+    doc.getElementById("connection").innerHTML = "WebSocket connection open!";
+  };
+  
+  // On message received
+  ws.onmessage = function(event) {
+    var leap = JSON.parse(event.data);
+    setVelocity(leap);
+    var str = JSON.stringify(leap, undefined, 2);
+    doc.getElementById("output").innerHTML = '<pre>' + str + '</pre>';
+  };
+  
+  // On socket close
+  ws.onclose = function(event) {
+    ws = null;
+    doc.getElementById("main").style.visibility = "hidden";
+    doc.getElementById("connection").innerHTML = "WebSocket connection closed";
+  }
+  
+  //On socket error
+  ws.onerror = function(event) {
+    alert("Received error");
+  };
+}
+</script>
+</head>
+<body onload="initLeapMotion();">
+<script src="https://raw.github.com/mrdoob/three.js/master/build/three.js"></script> 
+<script> 
+var velocity = [0,1,0];
+function setVelocity(leap){
+    if (leap !== undefined){
+        if (leap.hands !== undefined && leap.hands.length >= 1){
+            if (leap.hands[0].fingers !== undefined && leap.hands[0].fingers.length >= 1){
+                velocity[0] = leap.hands[0].fingers[0].tip.velocity[0];
+                velocity[1] = leap.hands[0].fingers[0].tip.velocity[1];
+                velocity[2] = leap.hands[0].fingers[0].tip.velocity[2];
+            }
+        }
+    }
+}
+
+var pause = false;
+
+var scene = new THREE.Scene(); 
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+var renderer = new THREE.WebGLRenderer();
+var clock = new THREE.Clock();
+renderer.setSize(window.innerWidth, window.innerHeight); 
+document.body.appendChild(renderer.domElement);  
+renderer.setClearColorHex(0xEEEEEE, 1.0);
+renderer.clear();
+
+var geometry = new THREE.CubeGeometry(1,1,1); 
+var material = new THREE.MeshBasicMaterial({color: 0x1f1ff1}); 
+var cube = new THREE.Mesh(geometry, material); 
+
+scene.add(cube);  
+camera.position.z = 5;
+
+function render() { 
+    
+    requestAnimationFrame(render);
+    if (!pause){
+        var delta = clock.getDelta();
+        console.log (velocity);
+        cube.rotation.x += delta * velocity[0] * .001;
+        cube.rotation.y += delta * velocity[1] * .001;
+        cube.rotation.y += delta * velocity[2] * .001;
+        
+        renderer.render(scene, camera);
+    }
+}
+render(); 
+</script>
+<button onclick="pause = !pause;">Pause </button>
+<h1>Leap JavaScript/WebSocket Sample</h1>
+<div id="connection">WebSocket not connected</div>
+<div id="main" style="visibility:hidden">
+  <p>JSON Frame data:</p>
+  <div id="output"></div>
+</div>
+</body>
+</html>
