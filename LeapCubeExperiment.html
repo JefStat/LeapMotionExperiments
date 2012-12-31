@@ -4,61 +4,31 @@
 <title>Leap</title>
 <style>canvas { width: 50%; height: 100% }</style>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-<script>
-var ws;
-
-// Support both the WebSocket and MozWebSocket objects
-if ((typeof(WebSocket) == 'undefined') &&
-    (typeof(MozWebSocket) != 'undefined')) {
-  WebSocket = MozWebSocket;
-}
-
-// Create the socket with event handlers
-function initLeapMotion() {
-  //Create and open the socket
-  ws = new WebSocket("ws://localhost:6437/");
-  
-  var doc = document;
-  
-  // On successful connection
-  ws.onopen = function(event) {
-    doc.getElementById("main").style.visibility = "visible";
-    doc.getElementById("connection").innerHTML = "WebSocket connection open!";
-  };
-  
-  // On message received
-  ws.onmessage = function(event) {
-    var leap = JSON.parse(event.data);
-    setVelocity(leap);
-    var str = JSON.stringify(leap, undefined, 2);
-    doc.getElementById("output").innerHTML = '<pre>' + str + '</pre>';
-  };
-  
-  // On socket close
-  ws.onclose = function(event) {
-    ws = null;
-    doc.getElementById("main").style.visibility = "hidden";
-    doc.getElementById("connection").innerHTML = "WebSocket connection closed";
-  }
-  
-  //On socket error
-  ws.onerror = function(event) {
-    alert("Received error");
-  };
-}
-</script>
+<script src="leap.js" ></script>
 </head>
 <body onload="initLeapMotion();">
 <script src="https://raw.github.com/mrdoob/three.js/master/build/three.js"></script> 
 <script> 
-var velocity = [0,1,0];
+var velocity = new THREE.Vector3( 0, 0, 0 );
 function setVelocity(leap){
     if (leap !== undefined){
         if (leap.hands !== undefined && leap.hands.length >= 1){
             if (leap.hands[0].fingers !== undefined && leap.hands[0].fingers.length >= 1){
-                velocity[0] = leap.hands[0].fingers[0].tip.velocity[0];
-                velocity[1] = leap.hands[0].fingers[0].tip.velocity[1];
-                velocity[2] = leap.hands[0].fingers[0].tip.velocity[2];
+				velocity.x = leap.hands[0].fingers[0].tip.velocity[1];
+                velocity.y = leap.hands[0].fingers[0].tip.velocity[0];
+                velocity.z = leap.hands[0].fingers[0].tip.velocity[2];
+            }
+        }
+    }
+}
+var normal = new THREE.Vector3( 0, 0, 0 );
+function setPalmNormal(leap){
+    if (leap !== undefined){
+        if (leap.hands !== undefined && leap.hands.length >= 1){
+            if (leap.hands[0].palm !== undefined && leap.hands[0].palm.length >= 1){
+				normal.x = leap.hands[0].palm[0].normal[0];
+                normal.y = leap.hands[0].palm[0].normal[1];
+                normal.z = leap.hands[0].palm[0].normal[2];
             }
         }
     }
@@ -86,16 +56,17 @@ function render() {
     
     requestAnimationFrame(render);
     if (!pause){
-        var delta = clock.getDelta();
-        console.log (velocity);
-        cube.rotation.x += delta * velocity[0] * .001;
-        cube.rotation.y += delta * velocity[1] * .001;
-        cube.rotation.y += delta * velocity[2] * .001;
-        
+		tick(clock.getDelta());
         renderer.render(scene, camera);
     }
 }
-render(); 
+render();
+function tick(delta){
+		var v = new THREE.Vector3( velocity.x, velocity.y, velocity.z );
+		v.multiplyScalar(.01);
+		v.multiplyScalar(delta);
+		cube.rotation.addSelf(v);
+}
 </script>
 <button onclick="pause = !pause;">Pause </button>
 <h1>Leap JavaScript/WebSocket Sample</h1>
