@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="ThreeJs" type="javaScript">
+    <CLASSES />
+    <DOCUMENTATION>
+      <root url="https://raw.github.com/mrdoob/three.js/master/build/three.js" />
+    </DOCUMENTATION>
+    <SOURCES />
+  </library>
+</component>

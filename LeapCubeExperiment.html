@@ -8,7 +8,13 @@
 </head>
 <body onload="initLeapMotion();">
 <script src="https://raw.github.com/mrdoob/three.js/master/build/three.js"></script> 
-<script> 
+<script>
+var texture = THREE.ImageUtils.loadTexture("crate.jpg");
+var olFunc = window.onload;
+window.onload = function(){
+    olFunc();
+    texture = THREE.ImageUtils.loadTexture("crate.jpg");
+}
 var velocity = new THREE.Vector3( 0, 0, 0 );
 function setVelocity(leap){
     if (leap !== undefined){
@@ -45,10 +51,13 @@ document.body.appendChild(renderer.domElement);
 renderer.setClearColorHex(0xEEEEEE, 1.0);
 renderer.clear();
 
-var geometry = new THREE.CubeGeometry(1,1,1); 
-var material = new THREE.MeshBasicMaterial({color: 0x1f1ff1}); 
-var cube = new THREE.Mesh(geometry, material); 
-
+var geometry = new THREE.CubeGeometry(1,1,1);
+var material = new THREE.MeshLambertMaterial({
+    map: texture
+});
+//var material = new THREE.MeshBasicMaterial({color: 0x1f1ff1});
+var cube = new THREE.Mesh(geometry, material);
+cube.overdraw = true;
 scene.add(cube);  
 camera.position.z = 5;
 
@@ -60,7 +69,9 @@ function render() {
         renderer.render(scene, camera);
     }
 }
+
 render();
+
 function tick(delta){
 		var v = new THREE.Vector3( velocity.x, velocity.y, velocity.z );
 		v.multiplyScalar(.01);
